@@ -37,7 +37,7 @@ tree_md5 <- "81fe22e0f57a478bda5cea67857baade"
 
 ## MgDb database files name
 db_file <- "../extdata/silva128.sqlite"
-metadata_file <- "../extdata/silva128_metadata.RData"
+metadata_file <- "../extdata/silva128_metadata.RDS"
 
 ### Download database files ####################################################
 download_db <- function(url, file_name, md5){
@@ -72,7 +72,7 @@ gunzip(filename = rnacentralgz_md5_file, destname = rnacentral_md5_file)
 
 ### Parse silva taxonomy
 parse_silva <- function(taxa_file, taxmap_file){
-    taxa <- fread(taxa_file, sep = "\t", header = TRUE , stringsAsFactors= FALSE)
+    taxa <- fread(taxa_file, sep = "\t", header = TRUE , stringsAsFactors = FALSE)
     taxamap <- fread(taxmap_file, sep = "\t", stringsAsFactors = FALSE, header = FALSE)
     tpath <- taxa$path
 
@@ -87,7 +87,7 @@ parse_silva <- function(taxa_file, taxmap_file){
     req <- c("domain", "phylum", "class", "order", "family", "genus")
     hierarchy <- lapply(tpath, function(path) {
         last_node <- str_split(path, ";")
-        nodes <- last_node[[1]][1:length(last_node[[1]]) -1]
+        nodes <- last_node[[1]][1:length(last_node[[1]]) - 1]
         level <- lapply(nodes, function(node) {
             as.character(taxa_list[[node]][1])
         })
@@ -95,7 +95,9 @@ parse_silva <- function(taxa_file, taxmap_file){
         out <- nodes[req]
         out
     })
-    df_hierarchy <- data.frame(matrix(unlist(hierarchy),nrow=length(hierarchy), byrow=T))
+    df_hierarchy <- data.frame(matrix(unlist(hierarchy),
+                                      nrow = length(hierarchy),
+                                      byrow = T))
     taxa$domain <- df_hierarchy$X1
     taxa$phylum <- df_hierarchy$X2
     taxa$class <- df_hierarchy$X3
@@ -116,20 +118,19 @@ taxa_tbl <- parse_silva(taxa_file, taxmap_file)
 
 rna_seqs <- Biostrings::readRNAStringSet(seq_file)
 seqs <- Biostrings::DNAStringSet(rna_seqs)
-seq_names_final <- vapply(strsplit(names(seqs)," ",fixed=TRUE), `[`, 1, FUN.VALUE=character(1))
+seq_names_final <- vapply(strsplit(names(seqs)," ", fixed = TRUE),
+                          `[`, 1, FUN.VALUE = character(1))
 names(seqs) <- seq_names_final
 
 md5mapping <- fread(rnacentral_md5_file, sep = "\t", header = FALSE )
-system.time(seqsdigest <- sapply(as.character(seqs), digest, algo="md5",serialize=F))
+system.time(seqsdigest <- sapply(as.character(seqs),
+                                 digest, algo = "md5",
+                                 serialize = F))
 
 rnacentral_tbl <- fread(rnacentral_file, sep = '\t', header = FALSE)
 
-metagenomeFeatures::make_mgdb_sqlite(db_name = "silva",
-                                     db_file = db_file,
-                                     taxa_tbl = taxa_tbl,
-                                     seqs = seqs)
-
-
+metagenomeFeatures:::make_mgdb_sqlite(db_name = "silva", db_file = db_file,
+                                      taxa_tbl = taxa_tbl, seqs = seqs)
 
 ### Database Metadata ##########################################################
 metadata <- list(ACCESSION_DATE = date(),
@@ -139,4 +140,4 @@ metadata <- list(ACCESSION_DATE = date(),
                  DB_TYPE_VALUE = "MgDb",
                  DB_SCHEMA_VERSION = "2.0")
 
-save(metadata, file = metadata_file)
+saveRDS(metadata, file = metadata_file)
