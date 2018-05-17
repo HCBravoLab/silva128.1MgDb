@@ -7,6 +7,8 @@ library(tidyr)
 library(tidyverse)
 library(stringr)
 library(R.utils)
+library(data.table)
+library(digest)
 ## Database URL
 db_root_url <- "https://www.arb-silva.de/fileadmin/silva_databases/release_128/Exports/"
 taxa_url <- paste0(db_root_url, "taxonomy/taxmap_slv_ssu_ref_128.txt.gz")
@@ -15,7 +17,7 @@ aligned_seq_url <- paste0(db_root_url, "SILVA_128_SSURef_tax_silva_full_align_tr
 seq_url <- paste0(db_root_url, "SILVA_128_SSURef_tax_silva.fasta.gz")
 tree_url <- paste0(db_root_url, "taxonomy/tax_slv_ssu_128.tre")
 rnacentral_url <- "ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/releases/8.0/id_mapping/database_mappings/silva.tsv"
-
+rnacentral_md5_url <- "ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/current_release/md5/md5.tsv.gz"
 ## Downloaded files
 taxa_file <- tempfile()
 taxagz_file <- tempfile()
@@ -23,6 +25,8 @@ seq_file <- tempfile()
 seqgz_file <- tempfile()
 rnacentral_file <- tempfile()
 taxmap_file <- tempfile()
+rnacentral_md5_file <- tempfile()
+rnacentralgz_md5_file <- tempfile()
 tree_file <- "../extdata/silva128.tre"
 
 ## MD5 check sums from initial download
@@ -62,50 +66,63 @@ download_db(tree_url, tree_file, tree_md5)
 ##Directly downloading RNAcentral mapping file
 download.file(rnacentral_url, rnacentral_file)
 
-### Create SQLite DB with Taxa and Seq Data ####################################
-expand_path <- function(path){
-    split_path <- unlist(str_split(path, ";"))
-    path_df <- data_frame()
-    for (i in 1:(length(split_path) - 1)) {
-        path_frag <- paste0(paste(split_path[1:i], collapse = ";"), ";")
-        # path_list <- c(path_list, path_frag)
-        path_df <- bind_rows(path_df, data_frame(taxa = split_path[i], V1 = path_frag))
-    }
-
-    path_df
-}
+##Donloading RNAcentral id to md5 mapping file
+download.file(rnacentral_md5_url, rnacentralgz_md5_file)
+gunzip(filename = rnacentralgz_md5_file, destname = rnacentral_md5_file)
 
 ### Parse silva taxonomy
-parse_silva <- function(taxa_file, rnacentral_file, taxamap_file){
-    taxa <- read.delim(taxa_file, stringsAsFactors = FALSE, header = TRUE)
-    taxamap <- read.delim(taxmap_file, stringsAsFactors = FALSE, header = FALSE)
-    expanded_taxa <- taxa[1:50,] %>%
-        as_tibble() %>%
-        select(primaryAccession, path) %>%
-        mutate(expanded_path = map(path, expand_path)) %>%
-        select(-path) %>%
-        unnest()
-    mergenewtaxa <- inner_join(x=expanded_taxa, y=taxamap)
-    wide_taxa_df <- mergenewtaxa %>%
-        select(primaryAccession, taxa, V3) %>%
-        spread(V3,taxa,fill = NA)
-    taxa_df <- data.frame(wide_taxa_df$primaryAccession,wide_taxa_df$domain,wide_taxa_df$phylum,wide_taxa_df$class, wide_taxa_df$order,wide_taxa_df$family, wide_taxa_df$genus)
-    taxa_df <- taxa_df[match(taxa$primaryAccession[1:50], taxa_df$wide_taxa_df.primaryAccession),]
-    taxa_df <- cbind(taxa_df, taxa$organism_name[1:50])
-    colnames(taxa_df) <- c("Keys","Kingdom","Phylum","Class","Ord","Family","Genus","Species")
-    ## Add RNAcentral ID and NCBItax ID - The primaryAccession field in taxa_df differs from RNAmap identifier.
-    # rnamap <- read.delim(rnacentral_file, stringsAsFactors = FALSE, header = FALSE)
-    # rnamap_new <- rnamap[match(taxa$primaryAccession,rnamap$V3),]
-    # taxa_df <-cbind(taxa_df,rnamap_new$V1[1:50],rnamap_new$V4[1:50])
-    # colnames(taxa_df) <- c("Keys","Kingdom","Phylum","Class","Ord","Family","Genus","Species","RNAcentralID","NCBItaxID")
+parse_silva <- function(taxa_file, taxmap_file){
+    taxa <- fread(taxa_file, sep = "\t", header = TRUE , stringsAsFactors= FALSE)
+    taxamap <- fread(taxmap_file, sep = "\t", stringsAsFactors = FALSE, header = FALSE)
+    tpath <- taxa$path
+
+    leaf <- lapply(taxamap$V1, function(n) {
+        last_node <- str_split(n, ";")
+        last_node[[1]][length(last_node[[1]]) - 1]
+    })
+    taxamap$leaf <- leaf
+    taxa_sub <- unique(data.frame(node = unlist(leaf), level = taxamap$V3))
+    taxa_list <- taxa_sub$level
+    names(taxa_list) <- taxa_sub$node
+    req <- c("domain", "phylum", "class", "order", "family", "genus")
+    hierarchy <- lapply(tpath, function(path) {
+        last_node <- str_split(path, ";")
+        nodes <- last_node[[1]][1:length(last_node[[1]]) -1]
+        level <- lapply(nodes, function(node) {
+            as.character(taxa_list[[node]][1])
+        })
+        names(nodes) <- level
+        out <- nodes[req]
+        out
+    })
+    df_hierarchy <- data.frame(matrix(unlist(hierarchy),nrow=length(hierarchy), byrow=T))
+    taxa$domain <- df_hierarchy$X1
+    taxa$phylum <- df_hierarchy$X2
+    taxa$class <- df_hierarchy$X3
+    taxa$order <- df_hierarchy$X4
+    taxa$family <- df_hierarchy$X5
+    taxa$genus <- df_hierarchy$X6
+
+    taxa$path <- NULL
+    taxa$taxid <- NULL
+    colnames(taxa) <- c("Accession", "start", "stop","Species", "Kingdom", "Phylum", "Class", "Ord", "Family", "Genus" )
+    taxa$Keys <- paste0(taxa$Accession,".", taxa$start,".", taxa$stop)
+    taxa_tbl_new <- taxa[,c(11, 1, 2, 3, 4, 5, 6 , 7, 8, 9, 10)]
     ## Return as a data.frame
-    data.frame(taxa_df)
+    data.frame(taxa_tbl_new)
 }
 
-taxa_tbl <- parse_silva(taxa_file, rnacentral_file)
+taxa_tbl <- parse_silva(taxa_file, taxmap_file)
 
 rna_seqs <- Biostrings::readRNAStringSet(seq_file)
 seqs <- Biostrings::DNAStringSet(rna_seqs)
+seq_names_final <- vapply(strsplit(names(seqs)," ",fixed=TRUE), `[`, 1, FUN.VALUE=character(1))
+names(seqs) <- seq_names_final
+
+md5mapping <- fread(rnacentral_md5_file, sep = "\t", header = FALSE )
+system.time(seqsdigest <- sapply(as.character(seqs), digest, algo="md5",serialize=F))
+
+rnacentral_tbl <- fread(rnacentral_file, sep = '\t', header = FALSE)
 
 metagenomeFeatures::make_mgdb_sqlite(db_name = "silva",
                                      db_file = db_file,

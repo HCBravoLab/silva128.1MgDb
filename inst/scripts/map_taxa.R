@@ -41,4 +41,14 @@ taxa$order <- df_hierarchy$order
 taxa$family <- df_hierarchy$family
 taxa$genus <- df_hierarchy$genus
 
+# taxa$start <- NULL
+# taxa$stop <- NULL
+taxa$path <- NULL
+taxa$taxid <- NULL
+colnames(taxa) <- c("Accession", "start", "stop","Species", "Kingdom", "Phylum", "Class", "Ord", "Family", "Genus" )
+taxa$Keys <- paste0(taxa_tbl$Accession,".", taxa_tbl$start,".", taxa_tbl$stop)
+taxa_tbl_new <- df[,c(which(colnames(df)=="Keys"),which(colnames(df)!="Keys"))]
+
+seq_names <- strsplit(names(seqs),".",fixed=TRUE )
+seq_names_final <- sapply(seq_names, dplyr::first)
 write.table(taxa, file="../extdata/taxa_added_map.txt", quote=F, sep=",", row.names=F)
