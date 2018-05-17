@@ -1,12 +1,11 @@
-This is a Bioconductor Annotation package with the SILVA SSU RNA database Version 123.1 for use with the metagenomeFeatures package (https://github.com/HCBravoLab/metagenomeFeatures.git).
+This is a Bioconductor Annotation package with the SILVA SSU RNA database Version 128.1 for use with the metagenomeFeatures package (https://github.com/HCBravoLab/metagenomeFeatures.git).
 
 The package is still in development and not available from bioconductor.
 
 To install the development version of the package:
 1. install metagenomeFeatures, this can be done using devtools `install_github("HCBravoLab/metagenomeFeatures")`
-2. clone this repository `git clone https://github.com/HCBravoLab/silva123.1MgDb.git`
-3. download the database sequence data from `inst/scripts` using `get_silva12.1MgDb.R` script to generate the metadata and database file required for the silva123.1MgDb.
-
-4. install silva123.1, this can be done using devtools `install_local("local/path/silva123.1MgDb")`, replace `local/path` with the path to the downloaded git repo.
+2. clone this repository `git clone https://github.com/HCBravoLab/silva128.1MgDb.git`
+3. download the database sequence data from `inst/scripts` using `make_silva128.1MgDb.R` script to generate the metadata and database file required for the silva128.1MgDb.
+4. install silva128.1, this can be done using devtools `install_local("local/path/silva128.1MgDb")`, replace `local/path` with the path to the downloaded git repo.
 
 The metagenomeFeatures package has vignettes demonstrating how to work with MgDb-class formated sequence databases.

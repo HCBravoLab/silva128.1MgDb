@@ -4,26 +4,36 @@
 
 .onAttach <- function(libname, pkgname){
 
-    db_file <- system.file("extdata", "silva128.1.sqlite",
-                                package = pkgname, lib.loc = libname)
+    db_file <- system.file("extdata", "silva128.sqlite",
+                           package = pkgname, lib.loc = libname)
 
-    metadata_file <- system.file("extdata", "silva128.1_metadata.RDS",
-                                package = pkgname, lib.loc = libname)
+    tree_file <- system.file("extdata", "silva128.tre",
+                             package = pkgname, lib.loc = libname)
+
+    metadata_file <- system.file("extdata", "silva128_metadata.RDS",
+                                 package = pkgname, lib.loc = libname)
 
     ## Note no tree for silva123.1
 
     if (!file.exists(db_file) | !file.exists(metadata_file)) {
-        packageStartupMessage("SILVA 128.1 database data not present, use `get_silva128.1.R` In the package inst/scripts directory to download the database into the package inst/extdata/ directory and reinstall the package")
+        packageStartupMessage("SILVA 128.1 database data not present,
+                              use `get_silva128.1.R` In the package
+                              inst/scripts directory to download the
+                              database into the package inst/extdata/
+                              directory and reinstall the package")
     }
 }
 
 .onLoad <- function(libname, pkgname){
     ns <- asNamespace(pkgname)
 
-    db_file <- system.file("extdata", "silva128.1.sqlite",
+    db_file <- system.file("extdata", "silva128.sqlite",
                                 package = pkgname, lib.loc = libname)
 
-    metadata_file <- system.file("extdata", "silva128.1_metadata.RDS",
+    tree_file <- system.file("extdata", "silva128.tre",
+                           package = pkgname, lib.loc = libname)
+
+    metadata_file <- system.file("extdata", "silva128_metadata.RDS",
                                 package = pkgname, lib.loc = libname)
 
     ## Add Tree data
@@ -32,7 +42,7 @@
 
     ## initiate new MgDB object
     slvMgDb <- metagenomeFeatures::newMgDb(db_file = db_file,
-                      tree = NULL,
+                      tree = tree_file,
                       metadata = metadata)
 
     assign("slv128.1MgDb", slvMgDb, envir = ns)

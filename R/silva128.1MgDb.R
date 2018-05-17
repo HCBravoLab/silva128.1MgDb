@@ -11,7 +11,6 @@
 #' @keywords package
 #' @seealso \link[metagenomeFeatures]{MgDb-class}
 #' @importClassesFrom metagenomeFeatures MgDb
-#' @import methods
 #' @examples
 #' ls('package:silva128.1MgDb')
 #' slv128.1MgDb
