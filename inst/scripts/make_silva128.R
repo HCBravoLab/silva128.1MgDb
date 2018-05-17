@@ -119,14 +119,31 @@ seqs <- Biostrings::DNAStringSet(rna_seqs)
 seq_names_final <- vapply(strsplit(names(seqs)," ",fixed=TRUE), `[`, 1, FUN.VALUE=character(1))
 names(seqs) <- seq_names_final
 
-md5mapping <- fread(rnacentral_md5_file, sep = "\t", header = FALSE )
-system.time(seqsdigest <- sapply(as.character(seqs), digest, algo="md5",serialize=F))
+add_rnacentral_mapping <- function(rnacentral_md5_file, rnacentral_file, taxa_tbl){
+    md5mapping <- fread(rnacentral_md5_file, sep = "\t", header = FALSE )
+    rnacentral_tbl <- fread(rnacentral_file, sep = '\t', header = FALSE)
+    md5mappingsubset <- subset(md5mapping,V1 %in% rnacentral_tbl$V1 )
+    merged_rna_tbl <- merge(md5mappingsubset, rnacentral_tbl, by="V1")
+    seqsdigest <- sapply(as.character(seqs), digest, algo="md5",serialize=F)
+    seqsdigest_tbl <- as.data.frame(seqsdigest)
+    seqsdigest_tbl$Keys <- names(seqsdigest)
+    colnames(seqsdigest_tbl) <- c("md5digest", "Keys")
+    merged_rna_tblsubset <- subset(merged_rna_tbl, V2.x %in% seqsdigest_tbl$md5digest)
+    colnames(merged_rna_tblsubset)<- c("RNAcentralID", "md5digest", "db", "accession", "NCBItaxonID", "V5", "V6")
+    seqsdigest_tbl$RNAcentralID <- merged_rna_tblsubset$RNAcentralID[match(seqsdigest_tbl$md5digest, merged_rna_tblsubset$md5digest)]
+    seqsdigest_tbl$NCBItaxonID <- merged_rna_tblsubset$NCBItaxonID[match(seqsdigest_tbl$md5digest, merged_rna_tblsubset$md5digest)]
+    taxa_tbl$RNAcentralID <- seqsdigest_tbl$RNAcentralID[match(taxa_tbl$Keys, seqsdigest_tbl$Keys)]
+    taxa_tbl$NCBItaxonID <- seqsdigest_tbl$NCBItaxonID[match(taxa_tbl$Keys, seqsdigest_tbl$Keys)]
+    ## Return as a data.frame
+    data.frame(taxa_tbl)
+}
 
-rnacentral_tbl <- fread(rnacentral_file, sep = '\t', header = FALSE)
-
-metagenomeFeatures::make_mgdb_sqlite(db_name = "silva",
+taxa_tbl_final <- add_rnacentral_mapping(rnacentral_md5_file, rnacentral_file, taxa_tbl)
+save(taxa_tbl_final, file = "taxa_tbl_final.Rdata")
+save(seqs, file = "seqs.Rdata")
+metagenomeFeatures:::make_mgdb_sqlite(db_name = "silva",
                                      db_file = db_file,
-                                     taxa_tbl = taxa_tbl,
+                                     taxa_tbl = taxa_tbl_final,
                                      seqs = seqs)
 
 
