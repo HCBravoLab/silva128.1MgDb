@@ -28,7 +28,7 @@ rnacentralgz_file <- tempfile()
 rnacentral_file <- tempfile()
 rnacentral_md5_file <- tempfile()
 rnacentralgz_md5_file <- tempfile()
-tree_file <- "../extdata/silva128.tre"
+tree_file <- "../extdata/silva128.1.tre"
 
 ## MD5 check sums from initial download
 taxa_md5 <- "766e219360430c7117fd6d76a4525b04"
