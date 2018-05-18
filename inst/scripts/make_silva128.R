@@ -16,15 +16,16 @@ taxmap_url <- paste0(db_root_url, "taxonomy/tax_slv_ssu_128.txt")
 aligned_seq_url <- paste0(db_root_url, "SILVA_128_SSURef_tax_silva_full_align_trunc.fasta.gz")
 seq_url <- paste0(db_root_url, "SILVA_128_SSURef_tax_silva.fasta.gz")
 tree_url <- paste0(db_root_url, "taxonomy/tax_slv_ssu_128.tre")
-rnacentral_url <- "ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/releases/8.0/id_mapping/database_mappings/silva.tsv"
+rnacentral_url <- "ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/current_release/id_mapping/id_mapping.tsv.gz"
 rnacentral_md5_url <- "ftp://ftp.ebi.ac.uk/pub/databases/RNAcentral/current_release/md5/md5.tsv.gz"
 ## Downloaded files
 taxa_file <- tempfile()
 taxagz_file <- tempfile()
 seq_file <- tempfile()
 seqgz_file <- tempfile()
-rnacentral_file <- tempfile()
 taxmap_file <- tempfile()
+rnacentralgz_file <- tempfile()
+rnacentral_file <- tempfile()
 rnacentral_md5_file <- tempfile()
 rnacentralgz_md5_file <- tempfile()
 tree_file <- "../extdata/silva128.tre"
@@ -64,7 +65,8 @@ gunzip(filename = seqgz_file, destname = seq_file)
 download_db(tree_url, tree_file, tree_md5)
 
 ##Directly downloading RNAcentral mapping file
-download.file(rnacentral_url, rnacentral_file)
+download.file(rnacentral_url, rnacentralgz_file)
+gunzip(filename = rnacentralgz_file, destname = rnacentral_file)
 
 ##Donloading RNAcentral id to md5 mapping file
 download.file(rnacentral_md5_url, rnacentralgz_md5_file)
@@ -121,17 +123,16 @@ names(seqs) <- seq_names_final
 
 add_rnacentral_mapping <- function(rnacentral_md5_file, rnacentral_file, taxa_tbl){
     md5mapping <- fread(rnacentral_md5_file, sep = "\t", header = FALSE )
-    rnacentral_tbl <- fread(rnacentral_file, sep = '\t', header = FALSE)
-    md5mappingsubset <- subset(md5mapping,V1 %in% rnacentral_tbl$V1 )
-    merged_rna_tbl <- merge(md5mappingsubset, rnacentral_tbl, by="V1")
+    id_map <- fread(rnacentral_file, sep = "\t", header = FALSE )
+    new_idmap <- id_map[,c("V1","V4")]
+    dedup_idmap <- subset(new_idmap,!duplicated(new_idmap$V1))
+    dedup_idmap$digest <- md5mapping$V2[match(dedup_idmap$V1,md5mapping$V1)]
     seqsdigest <- sapply(as.character(seqs), digest, algo="md5",serialize=F)
     seqsdigest_tbl <- as.data.frame(seqsdigest)
     seqsdigest_tbl$Keys <- names(seqsdigest)
     colnames(seqsdigest_tbl) <- c("md5digest", "Keys")
-    merged_rna_tblsubset <- subset(merged_rna_tbl, V2.x %in% seqsdigest_tbl$md5digest)
-    colnames(merged_rna_tblsubset)<- c("RNAcentralID", "md5digest", "db", "accession", "NCBItaxonID", "V5", "V6")
-    seqsdigest_tbl$RNAcentralID <- merged_rna_tblsubset$RNAcentralID[match(seqsdigest_tbl$md5digest, merged_rna_tblsubset$md5digest)]
-    seqsdigest_tbl$NCBItaxonID <- merged_rna_tblsubset$NCBItaxonID[match(seqsdigest_tbl$md5digest, merged_rna_tblsubset$md5digest)]
+    seqsdigest_tbl$RNAcentralID <- dedup_idmap$V1[match(seqsdigest_tbl$md5digest, dedup_idmap$digest)]
+    seqsdigest_tbl$NCBItaxonID <- dedup_idmap$V4[match(seqsdigest_tbl$md5digest, dedup_idmap$digest)]
     taxa_tbl$RNAcentralID <- seqsdigest_tbl$RNAcentralID[match(taxa_tbl$Keys, seqsdigest_tbl$Keys)]
     taxa_tbl$NCBItaxonID <- seqsdigest_tbl$NCBItaxonID[match(taxa_tbl$Keys, seqsdigest_tbl$Keys)]
     ## Return as a data.frame
