@@ -48,4 +48,10 @@
     assign("slv128.1MgDb", slvMgDb, envir = ns)
     namespaceExport(ns, "slv128.1MgDb")
 
+    message("Note that - there are 19,22,213 sequences in
+            SILVA v.128 database, of which 29,467 sequences
+            do not have RNACentral and NCBI taxon ID.")
+
+
+
 }
