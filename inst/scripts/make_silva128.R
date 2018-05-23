@@ -37,13 +37,8 @@ seq_md5 <- "e6feea458c5f1194192c0710c0f40938"
 tree_md5 <- "81fe22e0f57a478bda5cea67857baade"
 
 ## MgDb database files name
-<<<<<<< HEAD
-db_file <- "../extdata/silva128.sqlite"
-metadata_file <- "../extdata/silva128_metadata.RDS"
-=======
 db_file <- "../extdata/silva128.1.sqlite"
 metadata_file <- "../extdata/silva128.1_metadata.RDS"
->>>>>>> 629bf81179910dac5e00d224964aec3be81be43f
 
 ### Download database files ####################################################
 download_db <- function(url, file_name, md5){
@@ -136,7 +131,7 @@ add_rnacentral_mapping <- function(rnacentral_md5_file, rnacentral_file, taxa_tb
     new_idmap <- id_map[,c("V1","V4")]
     dedup_idmap <- subset(new_idmap,!duplicated(new_idmap$V1))
     dedup_idmap$digest <- md5mapping$V2[match(dedup_idmap$V1,md5mapping$V1)]
-    seqsdigest <- sapply(as.character(seqs), digest, algo="md5",serialize=F)
+    seqsdigest <- sapply(as.character(seqs), digest, algo = "md5", serialize = F)
     seqsdigest_tbl <- as.data.frame(seqsdigest)
     seqsdigest_tbl$Keys <- names(seqsdigest)
     colnames(seqsdigest_tbl) <- c("md5digest", "Keys")
