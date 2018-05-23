@@ -68,7 +68,7 @@ download_db(tree_url, tree_file, tree_md5)
 download.file(rnacentral_url, rnacentralgz_file)
 gunzip(filename = rnacentralgz_file, destname = rnacentral_file)
 
-##Donloading RNAcentral id to md5 mapping file
+##Downloading RNAcentral id to md5 mapping file
 download.file(rnacentral_md5_url, rnacentralgz_md5_file)
 gunzip(filename = rnacentralgz_md5_file, destname = rnacentral_md5_file)
 
@@ -144,14 +144,14 @@ add_rnacentral_mapping <- function(rnacentral_md5_file, rnacentral_file, taxa_tb
 }
 
 taxa_tbl_final <- add_rnacentral_mapping(rnacentral_md5_file, rnacentral_file, taxa_tbl)
-save(taxa_tbl_final, file = "taxa_tbl_final.Rdata")
-save(seqs, file = "seqs.Rdata")
+# save(taxa_tbl_final, file = "taxa_tbl_final.Rdata")
+# save(seqs, file = "seqs.Rdata")
 metagenomeFeatures:::make_mgdb_sqlite(db_name = "silva",
                                      db_file = db_file,
                                      taxa_tbl = taxa_tbl_final,
                                      seqs = seqs)
 
-rnacentral_tbl <- fread(rnacentral_file, sep = '\t', header = FALSE)
+# rnacentral_tbl <- fread(rnacentral_file, sep = '\t', header = FALSE)
 
 metagenomeFeatures:::make_mgdb_sqlite(db_name = "silva", db_file = db_file,
                                       taxa_tbl = taxa_tbl, seqs = seqs)
