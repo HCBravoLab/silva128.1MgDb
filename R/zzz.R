@@ -4,13 +4,13 @@
 
 .onAttach <- function(libname, pkgname){
 
-    db_file <- system.file("extdata", "silva128.sqlite",
+    db_file <- system.file("extdata", "silva128.1.sqlite",
                            package = pkgname, lib.loc = libname)
 
-    tree_file <- system.file("extdata", "silva128.tre",
+    tree_file <- system.file("extdata", "silva128.1.tre",
                              package = pkgname, lib.loc = libname)
 
-    metadata_file <- system.file("extdata", "silva128_metadata.RDS",
+    metadata_file <- system.file("extdata", "silva128.1_metadata.RDS",
                                  package = pkgname, lib.loc = libname)
 
     ## Note no tree for silva123.1

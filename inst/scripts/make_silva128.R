@@ -9,6 +9,7 @@ library(stringr)
 library(R.utils)
 library(data.table)
 library(digest)
+
 ## Database URL
 db_root_url <- "https://www.arb-silva.de/fileadmin/silva_databases/release_128/Exports/"
 taxa_url <- paste0(db_root_url, "taxonomy/taxmap_slv_ssu_ref_128.txt.gz")

@@ -1,6 +1,6 @@
-This is a Bioconductor Annotation package with the SILVA SSU RNA database Version 128.1 for use with the metagenomeFeatures package (https://github.com/HCBravoLab/metagenomeFeatures.git).
+This is a Bioconductor Annotation package with the SILVA SSU RNA database Version 128.1 for use with the metagenomeFeatures package (https://bioconductor.org/packages/release/bioc/html/metagenomeFeatures.html).
+The release version of the annotation package is available at Bioconductor (https://bioconductor.org).
 
-The package is still in development and not available from bioconductor.
 
 To install the development version of the package:
 1. install metagenomeFeatures, this can be done using devtools `install_github("HCBravoLab/metagenomeFeatures")`
