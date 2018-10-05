@@ -154,8 +154,6 @@ metagenomeFeatures:::make_mgdb_sqlite(db_name = "silva",
 
 # rnacentral_tbl <- fread(rnacentral_file, sep = '\t', header = FALSE)
 
-metagenomeFeatures:::make_mgdb_sqlite(db_name = "silva", db_file = db_file,
-                                      taxa_tbl = taxa_tbl, seqs = seqs)
 
 ### Database Metadata ##########################################################
 metadata <- list(ACCESSION_DATE = date(),
